@@ -1002,7 +1002,7 @@ function SeatModal({ seatId, seat, roomName, reminderTemplate, onClose, onSave, 
   const [currentDueDate, setCurrentDueDate] = useState(seat.dueDate || "");
   // How many days a billing cycle runs — 30 by default, but adjustable per
   // occupant (weekly, quarterly, etc.). Remembered on the seat once saved.
-  const [cycleDays, setCycleDays] = useState(seat.cycleDays || 31);
+  const [cycleDays, setCycleDays] = useState(seat.cycleDays || 30);
   // "Next due date" — always the value actually saved as the seat's due
   // date. Auto-suggested as (present due date) + (cycle days) whenever
   // either of those changes, but freely editable by hand afterward.
