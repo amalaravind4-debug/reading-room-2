@@ -59,7 +59,7 @@ function formatDueDate(isoDate) {
 // "next due date" the moment a payment is recorded (still editable afterward)
 // — normally 30 days out from the *previous* due date, not from today.
 function addDaysISO(days, baseIsoDate) {
-  const d = baseIsoDate ? new Date(baseIsoDate + "T00:00:00") : new Date();
+  const d = baseIsoDate ? new Date(baseIsoDate + "T12:00:00") : new Date();
   d.setDate(d.getDate() + days);
   return d.toISOString().slice(0, 10);
 }
