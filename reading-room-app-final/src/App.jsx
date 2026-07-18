@@ -61,7 +61,7 @@ function formatDueDate(isoDate) {
 function addDaysISO(days, baseIsoDate) {
   const d = baseIsoDate ? new Date(baseIsoDate + "T12:00:00") : new Date();
   d.setDate(d.getDate() + days);
-  return d.toISOString().slice(0, 10);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 // Today, as an ISO date string — used to prefill an editable "payment date".
