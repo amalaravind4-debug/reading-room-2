@@ -600,8 +600,22 @@ function getPaymentStatusKey(dueDate) {
 }
 
 function getPaymentDisplay(seatOrDueDate) {
-  const dueDate = typeof seatOrDueDate === "string" ? seatOrDueDate : seatOrDueDate?.dueDate;
-  const key = getPaymentStatusKey(dueDate);
+  const seat =
+    typeof seatOrDueDate === "string"
+      ? { dueDate: seatOrDueDate }
+      : seatOrDueDate;
+
+  // If payment has been recorded, show Paid immediately,
+  // even though the due date will only update next month.
+  if (
+    seat?.paidAt &&
+    seat?.nextDueDate &&
+    daysUntilDue(seat.nextDueDate) >= 0
+  ) {
+    return { key: "paid", ...PAYMENT_META.paid };
+  }
+
+  const key = getPaymentStatusKey(seat?.dueDate);
   return { key, ...PAYMENT_META[key] };
 }
 
