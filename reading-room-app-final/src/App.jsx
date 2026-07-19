@@ -1051,8 +1051,12 @@ function SeatModal({ seatId, seat, roomName, reminderTemplate, renewalCycleDays,
     dueDate,
   });
   const digits = (phone || "").replace(/\D/g, "");
-  const waLink = `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
-  const smsLink = `sms:${digits}?body=${encodeURIComponent(message)}`;
+  const phoneWithCountry = digits.startsWith("91")
+    ? digits
+    : `91${digits}`;
+  
+  const waLink = `https://wa.me/${phoneWithCountry}?text=${encodeURIComponent(message)}`;
+  const smsLink = `sms:+${phoneWithCountry}?body=${encodeURIComponent(message)}`;
 
   return (
     <Modal onClose={onClose}>
