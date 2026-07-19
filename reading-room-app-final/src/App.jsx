@@ -1029,6 +1029,7 @@ function SeatModal({ seatId, seat, roomName, reminderTemplate, renewalCycleDays,
   const [markingPaidNow, setMarkingPaidNow] = useState(false);
   const [paymentDate, setPaymentDate] = useState(seat.paidAt ? seat.paidAt.slice(0, 10) : todayISO());
   const [paymentMode, setPaymentMode] = useState(seat.paymentMode || "cash");
+  const [nextDueDate, setNextDueDate] = useState(seat.nextDueDate || addDaysISO(renewalCycleDays, dueDate));
   const [depositAmount, setDepositAmount] = useState(seat.depositAmount || 1000);
   const [depositStatus, setDepositStatus] = useState(seat.depositStatus || "held");
   const [aadhaarFront, setAadhaarFront] = useState(seat.aadhaarFront || "");
