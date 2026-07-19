@@ -1039,6 +1039,8 @@ function SeatModal({ seatId, seat, roomName, reminderTemplate, renewalCycleDays,
   const [address, setAddress] = useState(seat.address || "");
   const [confirmingVacate, setConfirmingVacate] = useState(false);
   const [depositRefunded, setDepositRefunded] = useState(seat.depositStatus === "refunded");
+  useEffect(() => {
+  if (!seat.nextDueDate) {setNextDueDate(addDaysISO(renewalCycleDays, dueDate));}}, [dueDate, renewalCycleDays]);
 
   // Always computed live from the due date — never set by hand.
   const statusMeta = getPaymentDisplay(dueDate);
