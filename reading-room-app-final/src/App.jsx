@@ -1067,7 +1067,7 @@ function SeatModal({ seatId, seat, roomName, reminderTemplate, renewalCycleDays,
 
       <Field label="Seat number" value={number} onChange={(e) => setNumber(e.target.value)} placeholder="e.g. 12 or A1" />
       <Field label="Occupant name" value={occupant} onChange={(e) => setOccupant(e.target.value)} placeholder="Full name" />
-      <Field label="Phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="98470 xxxxx" />
+      <Field label="Phone" value={phone} onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))} placeholder="98470XXXXX"/>
       <Field label="Monthly fee (₹)" type="number" value={fee} onChange={(e) => setFee(Number(e.target.value))} />
       <Field label="Due date" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
 
