@@ -1236,7 +1236,7 @@ function SeatModal({ seatId, seat, roomName, reminderTemplate, renewalCycleDays,
             // as nextDueDate — and that only gets promoted to the real due
             // date at the start of the following calendar month (see the
             // monthly rollover effect in the main App component).
-            const lockedNextDueDate = markingPaidNow ? addDaysISO(renewalCycleDays, dueDate) : seat.nextDueDate || "";
+            const lockedNextDueDate = markingPaidNow ? nextDueDate: seat.nextDueDate || "";
             onSave(seatId, {
               type: "seat",
               status: "occupied",
