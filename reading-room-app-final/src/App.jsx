@@ -1132,10 +1132,16 @@ function SeatModal({ seatId, seat, roomName, reminderTemplate, renewalCycleDays,
                 </button>
               ))}
             </div>
+            <Field
+              label="Next due date"
+              type="date"
+              value={nextDueDate}
+              onChange={(e) => setNextDueDate(e.target.value)}
+            />
+
             <p className="text-[#7C8698] text-[11px] mt-2">
-              This won't change the due date above right away. It locks in{" "}
-              {formatDueDate(addDaysISO(renewalCycleDays, dueDate))} as the next due date ({renewalCycleDays}-day
-              cycle, set in the Reminders tab) — that becomes the due date at the start of next month.
+              This date will become the active due date automatically at the start of the next month.
+              You can edit it if this payment covers a different duration.
             </p>
           </>
         )}
