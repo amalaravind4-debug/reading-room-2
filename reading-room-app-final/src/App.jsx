@@ -35,6 +35,7 @@ import {
   UserX,
   ClipboardCheck,
   RefreshCw,
+  Receipt,
 } from "lucide-react";
 
 // ---------- Date helpers ----------
@@ -323,6 +324,44 @@ function rowToPaymentRecord(row) {
     dueDateAtPayment: row.due_date_at_payment,
     nextDueDate: row.next_due_date,
   };
+}
+
+// ---------- Payment receipt numbering ----------
+// Turns a room's name into a short letter prefix (e.g. "Ilanjipra Reading
+// Room" -> "IRR") so receipts from different rooms/branches are visually
+// distinguishable at a glance.
+function receiptPrefixFor(roomName) {
+  const letters = String(roomName || "")
+    .split(/\s+/)
+    .map((w) => w[0])
+    .filter(Boolean)
+    .join("")
+    .toUpperCase();
+  return letters.slice(0, 4) || "RCPT";
+}
+
+// Derives a receipt number that's stable for the life of a payment record —
+// built from the record's own id and payment year rather than its position
+// in a list, so it never changes even after older records age out of the
+// 3-month payment_log retention window (see below). This app has no central
+// counter to hand out, so it isn't strictly sequential, but it's fixed and
+// effectively unique per payment, which is what makes a receipt re-printable
+// on demand with the same number every time.
+function receiptNumberFor(record) {
+  const year =
+    record.paidAt && !isNaN(new Date(record.paidAt).getTime())
+      ? new Date(record.paidAt).getFullYear()
+      : new Date().getFullYear();
+  const digits = String(record.id || "").replace(/\D/g, "");
+  let seq;
+  if (digits.length >= 6) {
+    seq = digits.slice(-6);
+  } else {
+    let hash = 0;
+    for (const ch of String(record.id || "")) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
+    seq = String(hash % 1000000).padStart(6, "0");
+  }
+  return `${receiptPrefixFor(record.roomName)}/${year}/${seq}`;
 }
 
 async function fetchPaymentLog() {
@@ -2026,6 +2065,114 @@ export default function App() {
     doc.save(`payments-received-${new Date().toISOString().slice(0, 10)}.pdf`);
   };
 
+  // Builds a single, print-ready payment receipt for one payment_log record —
+  // the "Receipt" button on each row of Payments received. Looks up the
+  // room's location for the letterhead address; falls back gracefully if the
+  // room's since been renamed or removed, since the receipt is generated
+  // fresh from record data every time rather than stored anywhere.
+  const handleDownloadReceipt = (record) => {
+    const room = rooms.find((rm) => rm.name === record.roomName);
+    const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const marginX = 48;
+    const receiptNo = receiptNumberFor(record);
+    const issuedOn = new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+    const paidOn = record.paidAt
+      ? new Date(record.paidAt).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })
+      : "—";
+
+    // Letterhead: room name + location on the left, receipt number + issue date on the right.
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    doc.setTextColor(30, 33, 40);
+    doc.text(record.roomName || "Reading Room", marginX, 56);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9.5);
+    doc.setTextColor(120);
+    if (room?.location) doc.text(room.location, marginX, 72);
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(20);
+    doc.setTextColor(232, 163, 61);
+    doc.text("RECEIPT", pageWidth - marginX, 52, { align: "right" });
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9.5);
+    doc.setTextColor(90);
+    doc.text(`No. ${receiptNo}`, pageWidth - marginX, 68, { align: "right" });
+    doc.text(`Issued ${issuedOn}`, pageWidth - marginX, 82, { align: "right" });
+
+    doc.setDrawColor(220);
+    doc.setLineWidth(1);
+    doc.line(marginX, 96, pageWidth - marginX, 96);
+
+    // Received from.
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(140);
+    doc.text("RECEIVED FROM", marginX, 122);
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(13);
+    doc.setTextColor(30, 33, 40);
+    doc.text(record.occupant || "—", marginX, 140);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10.5);
+    doc.setTextColor(110);
+    doc.text(`${record.roomName || "—"} · Seat ${record.seatNumber || "—"}`, marginX, 156);
+
+    // Payment details.
+    autoTable(doc, {
+      startY: 182,
+      theme: "plain",
+      styles: { fontSize: 10.5, cellPadding: { top: 7, bottom: 7, left: 0, right: 0 }, textColor: [50, 54, 62] },
+      columnStyles: {
+        0: { cellWidth: 220, textColor: [130, 134, 142] },
+        1: { halign: "right", fontStyle: "bold" },
+      },
+      body: [
+        ["Description", "Monthly reading room seat fee"],
+        ["Payment date", paidOn],
+        ["Mode of payment", record.mode === "upi" ? "UPI" : "Cash"],
+        ["Due date settled", formatDueDate(record.dueDateAtPayment)],
+        ["Next due date", formatDueDate(record.nextDueDate)],
+      ],
+      margin: { left: marginX, right: marginX },
+    });
+
+    const afterTableY = doc.lastAutoTable.finalY + 20;
+
+    // Amount paid, called out in its own band.
+    doc.setFillColor(24, 27, 34);
+    doc.roundedRect(marginX, afterTableY, pageWidth - marginX * 2, 52, 8, 8, "F");
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10.5);
+    doc.setTextColor(180);
+    doc.text("AMOUNT PAID", marginX + 18, afterTableY + 32);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(20);
+    doc.setTextColor(232, 163, 61);
+    doc.text(`₹${record.amount || 0}`, pageWidth - marginX - 18, afterTableY + 34, { align: "right" });
+
+    // Footer: signature line + generated-receipt disclaimer.
+    const footerY = afterTableY + 100;
+    doc.setDrawColor(225);
+    doc.line(marginX, footerY, marginX + 170, footerY);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(140);
+    doc.text("Authorized signatory", marginX, footerY + 14);
+
+    doc.setFontSize(8.5);
+    doc.setTextColor(160);
+    doc.text("This is a computer-generated receipt and is valid without a signature.", marginX, footerY + 40);
+    doc.text(`Generated ${new Date().toLocaleString("en-IN")}`, marginX, footerY + 52);
+
+    doc.save(`receipt-${receiptNo.replace(/\//g, "-")}.pdf`);
+  };
+
   // Builds a PDF of everyone who's ever vacated a seat — kept as a permanent
   // record even though the seat itself has long since been reassigned.
   // Vacated records within the chosen From/To range (inclusive). Empty = no bound.
@@ -2895,13 +3042,22 @@ export default function App() {
                           <td className="px-4 py-3 text-[#8A93A6] hidden sm:table-cell">{formatDueDate(r.dueDateAtPayment)}</td>
                           <td className="px-4 py-3 text-[#8A93A6] hidden sm:table-cell">{formatDueDate(r.nextDueDate)}</td>
                           <td className="px-4 py-3 text-right">
-                            <button
-                              onClick={() => deletePaymentRecord(r.id)}
-                              className="text-[#7C8698] hover:text-[#C1554A] transition-colors"
-                              title="Remove this record"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
+                            <div className="flex items-center justify-end gap-3">
+                              <button
+                                onClick={() => handleDownloadReceipt(r)}
+                                className="text-[#7C8698] hover:text-[#E8A33D] transition-colors"
+                                title="Download a printable payment receipt for this record"
+                              >
+                                <Receipt className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => deletePaymentRecord(r.id)}
+                                className="text-[#7C8698] hover:text-[#C1554A] transition-colors"
+                                title="Remove this record"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}
