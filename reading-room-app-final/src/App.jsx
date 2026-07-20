@@ -1935,13 +1935,13 @@ export default function App() {
             s.status === "occupied" ? "Occupied" : "Vacant",
             s.occupant || "—",
             s.phone || "—",
-            s.status === "occupied" ? `₹${s.fee || 0}` : "—",
+            s.status === "occupied" ? `Rs. ${s.fee || 0}` : "—",
             s.status === "occupied" ? getPaymentDisplay(s).label : "—",
             s.status === "occupied" && s.paymentMode ? (s.paymentMode === "upi" ? "UPI" : "Cash") : "—",
             s.status === "occupied" && s.paidAt ? formatDueDate(s.paidAt.slice(0, 10)) : "—",
             s.status === "occupied" ? formatDueDate(s.dueDate) : "—",
             s.status === "occupied" ? formatDueDate(addDaysISO(renewalCycleDays, s.dueDate)) : "—",
-            s.status === "occupied" ? `₹${s.depositAmount || 0} (${s.depositStatus === "refunded" ? "Refunded" : "Held"})` : "—",
+            s.status === "occupied" ? `Rs. ${s.depositAmount || 0} (${s.depositStatus === "refunded" ? "Refunded" : "Held"})` : "—",
             s.aadhaarNumber || "—",
             s.address || "—",
           ]);
@@ -2033,7 +2033,7 @@ export default function App() {
       r.roomName,
       r.seatNumber,
       r.occupant || "—",
-      `₹${r.amount || 0}`,
+      `Rs. ${r.amount || 0}`,
       r.mode === "upi" ? "UPI" : "Cash",
       new Date(r.paidAt).toLocaleString("en-IN"),
       formatDueDate(r.dueDateAtPayment),
@@ -2058,7 +2058,7 @@ export default function App() {
       styles: { fontSize: 8.5, cellPadding: 5 },
       headStyles: { fillColor: [20, 23, 28], textColor: 255 },
       alternateRowStyles: { fillColor: [245, 245, 245] },
-      foot: [["", "", "", `₹${paymentLogTotal}`, "", "Total received", "", ""]],
+      foot: [["", "", "", `Rs. ${paymentLogTotal}`, "", "Total received", "", ""]],
       footStyles: { fillColor: [32, 36, 44], textColor: [232, 163, 61], fontStyle: "bold" },
     });
 
@@ -2154,7 +2154,7 @@ export default function App() {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(20);
     doc.setTextColor(232, 163, 61);
-    doc.text(`₹${record.amount || 0}`, pageWidth - marginX - 18, afterTableY + 34, { align: "right" });
+    doc.text(`Rs. ${record.amount || 0}`, pageWidth - marginX - 18, afterTableY + 34, { align: "right" });
 
     // Footer: signature line + generated-receipt disclaimer.
     const footerY = afterTableY + 100;
@@ -2192,11 +2192,11 @@ export default function App() {
       r.seatNumber,
       r.occupant || "—",
       r.phone || "—",
-      `₹${r.fee || 0}`,
+      `Rs. ${r.fee || 0}`,
       PAYMENT_META[r.paymentStatus]?.label ?? "—",
       formatDueDate(r.lastPaymentDate),
       formatDueDate(r.dueDate),
-      `₹${r.depositAmount || 0}`,
+      `Rs. ${r.depositAmount || 0}`,
       r.depositRefunded ? "Refunded" : "Not refunded",
       new Date(r.vacatedAt).toLocaleDateString("en-IN"),
       r.aadhaarNumber || "—",
